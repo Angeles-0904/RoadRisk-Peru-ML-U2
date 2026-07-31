@@ -9,6 +9,8 @@
 | Integrante 3 | Arquitectura del sistema + Despliegue | 2 | 1-3 |
 | Integrante 4 | Pipelines de mantenimiento e IC + Pruebas + Conclusiones | 4 | 7-9 y 11-12 |
 
+*Nota: los puntos indican los items de la rubrica asignados a cada integrante (no el total de la exposicion, que suma 24).*
+
 Enlaces para la exposicion:
 
 - Aplicacion desplegada: `https://roadrisk-peru-ml-u2.onrender.com`
@@ -100,7 +102,7 @@ Key phrase: "The Unit 1 form still works. The novelty: the crash is now also cla
 
 ## Minutes 7-9: MLOps, CI/CD and maintenance
 
-CI (`ci.yml`) on every push: install deps, train supervised, train clustering, verify registry, run 17 tests. Maintenance (`retrain.yml`) daily at 05:00 UTC and on demand: load data -> train a CHALLENGER -> compare against the production CHAMPION. If the challenger improves recall, promote it; otherwise keep the champion and only register the new version. Monitoring uses PSI for numeric features and chi-square for categorical ones, with alerts and status (OK / REVIEW / ACTION REQUIRED).
+CI (`ci.yml`) on every push: install deps, train supervised, train clustering, verify registry, run 17 tests. Maintenance (`retrain.yml`) daily at 05:00 UTC and on demand: load data -> train a CHALLENGER -> compare against the production CHAMPION. If the challenger improves recall, promote it; otherwise keep the champion and only register the new version. Real validation result: the local challenger v2 with identical data (recall 0.7356 = champion v1) was NOT promoted (KEPT_CHAMPION); production later reached v3 because each Render build retrains with promotion. Monitoring uses PSI for numeric features and chi-square for categorical ones, with alerts and status (OK / REVIEW / ACTION REQUIRED).
 
 Key phrase: "The model is never frozen: the pipeline retrains, compares, and versions it automatically every day. A version is promoted only if it actually improves on the previous one."
 
