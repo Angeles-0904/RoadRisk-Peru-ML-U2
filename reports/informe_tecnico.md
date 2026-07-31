@@ -1,5 +1,17 @@
 # Informe tecnico - RoadRisk Peru (Unidad 2)
 
+## 0. Correspondencia con la rubrica
+
+Este informe cubre explícitamente los criterios de evaluacion de la Unidad 2:
+
+| Criterio de la rubrica | Pts | Seccion de este informe |
+|---|---|---|
+| Herramientas, plataformas y aplicaciones para despliegue, mantenimiento e IC | 1 | Seccion 15 |
+| Organizacion del codigo fuente | 1 | Seccion 2 |
+| Consideraciones de despliegue inicial | 1 | Seccion 9 |
+| Flujos de mantenimiento e integracion continua | 2 | Secciones 10 y 11 |
+| Video grabado de la exposicion (URL) | 3 | Seccion 16 |
+
 ## 1. Descripcion general del sistema actualizado
 
 RoadRisk Peru es una aplicacion web/API que estima la probabilidad de que un accidente de transito en carretera registre fallecidos y que, ademas, descubre patrones ocultos de siniestros mediante aprendizaje no supervisado.
@@ -15,7 +27,9 @@ La version 2.0.0 incorpora:
 
 El objetivo no es reemplazar la evaluacion policial o medica, sino priorizar alertas y apoyar decisiones tempranas de respuesta.
 
-## 2. Arquitectura del sistema
+**URL de la aplicacion en produccion**: `https://roadrisk-peru-ml-u2.onrender.com`
+
+## 2. Arquitectura del sistema y organizacion del codigo fuente
 
 ```text
 +---------------------+        +--------------------------+
@@ -56,13 +70,42 @@ El objetivo no es reemplazar la evaluacion policial o medica, sino priorizar ale
 
 Capas:
 
-1. **Presentacion**: interfaz web con dos pestañas (Prediccion de riesgo y Analisis de patrones).
+1. **Presentacion**: interfaz web con dos pestanas (Prediccion de riesgo y Analisis de patrones).
 2. **API**: FastAPI con endpoints de prediccion, clustering, registro y monitoreo.
-3. **Logica**: paquete `src/roadrisk` con modulos separados por responsabilidad (datos, entrenamiento, prediccion, clustering, registro, monitoreo, retraining).
+3. **Logica**: paquete `src/roadrisk` con modulos separados por responsabilidad.
 4. **Datos**: `data/raw` (fuentes originales) y `data/processed` (datos limpios).
 5. **Modelos**: registro versionado en `models/` con punteros planos de produccion para compatibilidad.
 
-Separacion de responsabilidades:
+Organizacion del codigo fuente (separacion de responsabilidades):
+
+```text
+app/
+  main.py                    Aplicacion FastAPI (UI + API)
+src/roadrisk/
+  config.py                  Rutas y constantes globales
+  data.py                    Carga, limpieza e ingenieria de caracteristicas
+  train.py                   Entrenamiento supervisado (GridSearchCV) + registro
+  predict.py                 Carga del modelo y prediccion
+  clustering.py              Modelo no supervisado K-Means, perfiles y asignacion
+  train_clustering.py        CLI de entrenamiento de clustering
+  registry.py                Registro y versionamiento de modelos
+  retrain.py                 Retraining con comparacion campeon vs retador
+  monitoring.py              Deteccion de deriva de datos y reportes
+data/
+  raw/                       CSV originales (SUTRAN, ONSV)
+  processed/                 Datos limpios generados
+models/
+  random_forest/vN/          Versiones del modelo supervisado
+  clustering/vN/             Versiones del modelo no supervisado
+  registry.json              Indice de versiones y produccion
+reports/
+  figures/                   Figuras (confusion, importancia, clusters)
+  monitoring/                Reportes de deriva
+  retraining/                Reportes de comparacion campeon/retador
+tests/                       Pruebas automatizadas (17)
+.github/workflows/           CI y reentrenamiento automatico
+Dockerfile, render.yaml      Despliegue
+```
 
 | Modulo | Responsabilidad |
 |---|---|
@@ -78,7 +121,7 @@ Separacion de responsabilidades:
 
 ## 3. Dataset
 
-Fuentes (sin cambios respecto a la Unidad 1):
+Fuentes:
 
 - `data/raw/sutran_accidentes_2020_2021.csv`: base SUTRAN de accidentes en carreteras con fallecidos y heridos. Se usa para entrenamiento (supervisado y no supervisado) porque contiene casos con y sin fallecidos.
 - `data/raw/onsv_siniestros_fatales_2021_2025.csv`: base ONSV de siniestros fatales (contexto).
@@ -188,53 +231,67 @@ Modelo no supervisado:
 - Davies-Bouldin: **1.6603** (cuanto menor, mejor separacion).
 - Inercia k=2: 46153.0.
 
-Monitoreo (07:00 UTC del mismo dia, referencia = datos de entrenamiento vs datos actuales):
+Monitoreo (referencia = datos de entrenamiento vs datos actuales):
 
 - PSI = 0.0 en todas las variables numericas.
 - p = 1.0 en todas las variables categoricas.
 - Delta de tasa de positivos: 0.0.
 - Estado: **OK**, sin alertas (esperado: los datos actuales son el mismo corte de entrenamiento; el pipeline detecta deriva cuando llega un CSV nuevo).
 
-## 9. Despliegue
+## 9. Despliegue y consideraciones de despliegue inicial
 
-Render (recomendado) + Docker:
+La aplicacion esta **desplegada en produccion** en Render (plan free):
 
-- `render.yaml`: build `pip install -r requirements.txt && python -m src.roadrisk.train && python -m src.roadrisk.train_clustering`; start `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
-- `Dockerfile`: imagen `python:3.11-slim` que entrena ambos modelos en build y arranca Uvicorn.
-- El despliegue entrena los dos modelos en el build, de modo que la app en produccion tiene disponibles prediccion y analisis de patrones sin pasos manuales.
+- **URL**: `https://roadrisk-peru-ml-u2.onrender.com`
+- **Repositorio**: `https://github.com/Angeles-0904/RoadRisk-Peru-ML-U2`
+
+Despliegue por contenedor (Dockerfile):
+
+- Imagen base `python:3.11-slim`.
+- Build: `pip install -r requirements.txt && python -m src.roadrisk.train && python -m src.roadrisk.train_clustering` (entrena ambos modelos dentro del build; la app queda lista sin pasos manuales).
+- Start: `CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]` — Render inyecta el puerto via `$PORT` y `exec` deja a uvicorn como PID 1 (apagado limpio).
+
+Consideraciones de despliegue inicial:
+
+1. Crear un repositorio GitHub con el codigo fuente.
+2. En Render: "New Web Service" o "Blueprint" conectado al repositorio.
+3. Seleccionar el plan free; no requiere variables de entorno adicionales.
+4. En el primer build Render instala dependencias y entrena ambos modelos (unos minutos).
+5. Verificar con `GET /health` y los endpoints `/api/v1/*`.
+6. En el plan free, tras 15 min sin visitas el servicio se suspende; la primera peticion tras la suspension tarda unos segundos.
 
 Nota operativa: cada build de despliegue ejecuta el entrenamiento con promocion (`promote=True`), por lo que cada deploy puede registrar y promover una version nueva (v2, v3, ...) aunque los datos no hayan cambiado. Esto replica el comportamiento de la Unidad 1 (build que reentrena) y demuestra el versionamiento en accion; si se prefiere evitar la creacion de versiones en cada deploy, basta ejecutar `python -m src.roadrisk.retrain` en el build, que promueve solo si el retador mejora al campeon.
 
-## 10. CI/CD
+## 10. Integracion continua (CI)
 
-`.github/workflows/ci.yml` (cada push y pull request):
+`.github/workflows/ci.yml` (se ejecuta en cada push y pull request):
 
-1. Instala dependencias.
-2. Entrena el modelo supervisado.
-3. Entrena el modelo no supervisado.
+1. Instala dependencias (`pip install -r requirements.txt`).
+2. Entrena el modelo supervisado (`python -m src.roadrisk.train`).
+3. Entrena el modelo no supervisado (`python -m src.roadrisk.train_clustering`).
 4. Verifica el registro (`registry.json` con version en produccion para ambas familias).
 5. Ejecuta la suite de pruebas (17 tests).
 6. Publica artefactos (modelos y figuras).
 
-## 11. Reentrenamiento
+## 11. Mantenimiento automatico (reentrenamiento)
 
-`.github/workflows/retrain.yml` (diario 05:00 UTC + manual):
+`.github/workflows/retrain.yml` (diario 05:00 UTC + ejecucion manual desde GitHub Actions):
 
 1. Instala dependencias.
 2. Ejecuta `python -m src.roadrisk.retrain`:
    - Carga la version en produccion (campeon).
    - Entrena un retador con los datos disponibles (sin promoverlo aun).
    - Compara: si el retador mejora `test_recall` (desempate `test_roc_auc`) se promueve; si empeora o empata, se conserva el campeon.
+   - Reentrena el modelo no supervisado (K-Means) internamente.
    - Genera reporte de comparacion en `reports/retraining/`.
-3. Reentrena el modelo no supervisado y lo registra/promueve (los patrones cambian con los datos).
-4. Ejecuta el monitoreo de deriva y guarda el reporte en `reports/monitoring/`.
-5. Ejecuta pruebas y publica artefactos.
+3. Ejecuta el monitoreo de deriva (`python -m src.roadrisk.monitoring`) y guarda el reporte en `reports/monitoring/`.
+4. Ejecuta pruebas y publica artefactos.
 
 Resultado de la validacion del 2026-07-31:
 
 - Campeon v1: recall 0.7356, ROC AUC 0.6675.
 - Retador v2 (mismos datos): recall 0.7356, ROC AUC 0.6675.
-- Decision: **KEPT_CHAMPION** (el retador no mejora; se conserva v1 en produccion, v2 queda registrado).
+- Decision: **KEPT_CHAMPION** (el retador no mejora; se conserva el campeon, v2 queda registrado).
 
 Regla de negocio implementada:
 
@@ -243,7 +300,7 @@ Si recall_retador > recall_campeon   -> promover retador
 Si recall_retador <= recall_campeon  -> conservar campeon
 ```
 
-## 12. Versionamiento
+## 12. Versionamiento de modelos
 
 Registro manual (`src/roadrisk/registry.py`):
 
@@ -252,18 +309,20 @@ models/
   random_forest/
     v1/  model.joblib  metrics.json  metadata.json
     v2/  model.joblib  metrics.json  metadata.json
+    v3/  model.joblib  metrics.json  metadata.json
   clustering/
     v1/  model.joblib  metrics.json  metadata.json
     v2/  model.joblib  metrics.json  metadata.json
+    v3/  model.joblib  metrics.json  metadata.json
   registry.json        <- versiones por familia + version en produccion
 ```
 
 `metadata.json` registra: version, familia, algoritmo, parametros, fecha de entrenamiento, fecha de registro y notas.
 
-Estado actual del registro:
+**Estado actual del registro en produccion** (consultado via `GET /api/v1/models/registry`):
 
-- `random_forest`: produccion **v1** (versiones: v1, v2).
-- `clustering`: produccion **v2** (versiones: v1, v2).
+- `random_forest`: produccion **v3** (versiones: v1, v2, v3).
+- `clustering`: produccion **v3** (versiones: v1, v2, v3).
 
 Los archivos planos `roadrisk_model.joblib` y `clustering_model.joblib` son punteros a la version en produccion, lo que preserva la compatibilidad con la app (no se elimino funcionalidad).
 
@@ -282,6 +341,13 @@ Suite automatizada (`tests/`, 17 pruebas, todas en verde):
 | `test_monitoring.py` | PSI identico=0, PSI detecta deriva, chi-cuadrado, estructura del reporte. |
 
 Los tests de clustering y API usan `pytest.skip` si el modelo no esta entrenado, para permitir ejecutar la suite antes del primer entrenamiento (en CI siempre se entrena primero).
+
+**Pruebas de funcionamiento del mantenimiento e integracion continua** (criterio de la rubrica):
+
+- El pipeline CI se ejecuto de extremo a extremo (instalacion -> entrenamiento de ambos modelos -> verificacion del registro -> 17 pruebas -> artefactos).
+- El pipeline de reentrenamiento se ejecuto localmente y produjo: entrenamiento del retador, comparacion campeon/retador con decision `KEPT_CHAMPION`, registro de la nueva version y reporte en `reports/retraining/`.
+- El monitoreo de deriva se ejecuto y genero reporte con estado `OK` en `reports/monitoring/`.
+- La aplicacion desplegada responde correctamente en todos los endpoints verificados (`/health`, `/`, `/api/v1/clusters`, `/api/v1/models/registry`, `/api/v1/monitoring/report`, `POST /predict`, `POST /api/v1/clusters/assign`).
 
 ## 14. Manual para equipo TI
 
@@ -327,3 +393,31 @@ uvicorn app.main:app --reload
 2. Conectar el repositorio con Render.
 3. Render ejecuta el build (dependencias + entrenamiento de ambos modelos) e inicia Uvicorn.
 4. Verificar `GET /health` y los endpoints `/api/v1/*`.
+
+## 15. Herramientas, plataformas y aplicaciones necesarias
+
+| Herramienta/Plataforma | Uso en el proyecto | Version |
+|---|---|---|
+| Python | Lenguaje de programacion de todo el sistema | 3.11 |
+| FastAPI | Framework web (UI + API REST) | >=0.110 |
+| Uvicorn | Servidor ASGI que levanta la aplicacion | >=0.27 |
+| scikit-learn | Modelos (Random Forest, K-Means) y metrica (GridSearchCV, silhouette, Davies-Bouldin) | >=1.3 |
+| pandas / numpy | Procesamiento de datos | pandas>=2.0, numpy>=1.24 |
+| scipy | Prueba chi-cuadrado del monitoreo | >=1.10 |
+| joblib | Serializacion de modelos | >=1.3 |
+| matplotlib | Figuras (matriz de confusion, clusters, codo) | >=3.7 |
+| pytest | Pruebas automatizadas | >=8.0 |
+| Git / GitHub | Control de versiones y repositorio remoto | - |
+| GitHub Actions | Integracion continua y reentrenamiento automatico | - |
+| Docker | Contenedor de la aplicacion | - |
+| Render | Plataforma de despliegue en produccion (plan free) | - |
+
+## 16. Video grabado de la exposicion
+
+URL del video (maximo 12 minutos):
+
+```text
+[PENDIENTE - insertar URL del video grabado de la exposicion]
+```
+
+Nota: el video debe incluir la explicacion tecnica del producto, el funcionamiento de la aplicacion en ingles, el entrenamiento del modelo, el despliegue, los pipelines de mantenimiento e integracion continua, y las pruebas de funcionamiento. El guion de la exposicion esta en `reports/guion_exposicion.md` (estructura de 12 minutos + version en ingles).
