@@ -1,0 +1,56 @@
+{
+  "generated_at_utc": "2026-07-31T06:58:59.906012+00:00",
+  "reference_rows": 8067,
+  "current_rows": 8067,
+  "numeric_drift": {
+    "kilometro": {
+      "psi": 0.0,
+      "alert": "NO"
+    },
+    "hora_siniestro": {
+      "psi": 0.0,
+      "alert": "NO"
+    },
+    "mes": {
+      "psi": 0.0,
+      "alert": "NO"
+    },
+    "es_noche": {
+      "psi": 0.0,
+      "alert": "NO"
+    }
+  },
+  "categorical_drift": {
+    "departamento": {
+      "chi2_stat": 0.0,
+      "p_value": 1.0,
+      "max_share_delta": 0.0,
+      "alert": "NO"
+    },
+    "codigo_via": {
+      "chi2_stat": 0.0,
+      "p_value": 1.0,
+      "max_share_delta": 0.0,
+      "alert": "NO"
+    },
+    "modalidad": {
+      "chi2_stat": null,
+      "p_value": 1.0,
+      "max_share_delta": 0.0,
+      "alert": "NO"
+    },
+    "dia_semana": {
+      "chi2_stat": null,
+      "p_value": 1.0,
+      "max_share_delta": 0.0,
+      "alert": "NO"
+    }
+  },
+  "target_drift": {
+    "reference_positive_rate": 0.1171,
+    "current_positive_rate": 0.1171,
+    "delta": 0.0
+  },
+  "alerts": [],
+  "status": "OK"
+}

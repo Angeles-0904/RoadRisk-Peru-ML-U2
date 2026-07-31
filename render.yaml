@@ -2,7 +2,7 @@ services:
   - type: web
     name: roadrisk-peru
     env: python
-    buildCommand: "pip install -r requirements.txt && python -m src.roadrisk.train"
+    buildCommand: "pip install -r requirements.txt && python -m src.roadrisk.train && python -m src.roadrisk.train_clustering"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     plan: free
 

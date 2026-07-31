@@ -15,3 +15,16 @@ ONSV_PERSONAS_CSV = RAW_DIR / "onsv_personas_involucradas_2021_2025.csv"
 MODEL_PATH = MODEL_DIR / "roadrisk_model.joblib"
 METRICS_PATH = MODEL_DIR / "metrics.json"
 
+# --- Registro y versionamiento de modelos (Unidad 2) ---
+MODEL_REGISTRY_ROOT = MODEL_DIR
+REGISTRY_INDEX_PATH = MODEL_REGISTRY_ROOT / "registry.json"
+
+# Punteros planos de produccion (compatibilidad con la app existente)
+CLUSTER_MODEL_PATH = MODEL_DIR / "clustering_model.joblib"
+CLUSTER_METRICS_PATH = MODEL_DIR / "clustering_metrics.json"
+
+# Monitoreo y reentrenamiento
+REFERENCE_CSV = PROCESSED_DIR / "sutran_model_ready.csv"
+MONITORING_DIR = REPORTS_DIR / "monitoring"
+RETRAINING_DIR = REPORTS_DIR / "retraining"
+

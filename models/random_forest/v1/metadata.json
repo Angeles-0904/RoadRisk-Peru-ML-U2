@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "family": "random_forest",
+  "algorithm": "random_forest",
+  "params": {
+    "model__max_depth": 8,
+    "model__min_samples_leaf": 8,
+    "model__n_estimators": 180
+  },
+  "trained_at_utc": "2026-07-31T06:57:58.618235+00:00",
+  "registered_at_utc": "2026-07-31T06:57:59.007955+00:00",
+  "notes": "Modelo supervisado de clasificacion binaria de riesgo fatal (RoadRisk Peru)."
+}

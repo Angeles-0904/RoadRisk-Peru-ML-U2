@@ -14,8 +14,17 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Train model
+      - name: Train supervised model (Random Forest)
         run: python -m src.roadrisk.train
+      - name: Train unsupervised model (K-Means)
+        run: python -m src.roadrisk.train_clustering
+      - name: Verify model registry
+        run: >-
+          python -c "from src.roadrisk.registry import get_registry_state;
+          s = get_registry_state();
+          assert s['random_forest']['production'], 'sin version en produccion (random_forest)';
+          assert s['clustering']['production'], 'sin version en produccion (clustering)';
+          print('registry ok:', {k: v['production'] for k, v in s.items()})"
       - name: Run tests
         run: pytest -q
       - name: Upload model artifacts

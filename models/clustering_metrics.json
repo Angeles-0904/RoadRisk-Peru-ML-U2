@@ -1,0 +1,79 @@
+{
+  "trained_at_utc": "2026-07-31T07:01:07.496288+00:00",
+  "dataset_rows": 8067,
+  "algorithm": "kmeans",
+  "k": 2,
+  "elbow_k": 4,
+  "n_features": 120,
+  "silhouette": 0.23300851440944423,
+  "silhouette_sample_size": 4000,
+  "davies_bouldin": 1.660333392819658,
+  "inertia": 46153.013645869214,
+  "k_evaluation": [
+    {
+      "k": 2,
+      "inertia": 46153.013645869214,
+      "silhouette": 0.23300851440944423,
+      "davies_bouldin": 1.660333392819658,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 3,
+      "inertia": 41406.324311513265,
+      "silhouette": 0.196026168856723,
+      "davies_bouldin": 1.8454554259675788,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 4,
+      "inertia": 37686.517064663,
+      "silhouette": 0.15186308035478877,
+      "davies_bouldin": 1.9781958930056953,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 5,
+      "inertia": 35927.192001895346,
+      "silhouette": 0.1473257012453373,
+      "davies_bouldin": 2.0487387236509758,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 6,
+      "inertia": 34622.50044921459,
+      "silhouette": 0.13468343815892103,
+      "davies_bouldin": 2.0858626508187155,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 7,
+      "inertia": 33354.488398453985,
+      "silhouette": 0.11585110899555623,
+      "davies_bouldin": 2.1853751762130202,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 8,
+      "inertia": 32328.587935571082,
+      "silhouette": 0.10901414270051275,
+      "davies_bouldin": 2.3641945817588788,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 9,
+      "inertia": 31597.101188551715,
+      "silhouette": 0.10671126432793332,
+      "davies_bouldin": 2.425724584372192,
+      "silhouette_sample_size": 4000
+    },
+    {
+      "k": 10,
+      "inertia": 30985.938343125563,
+      "silhouette": 0.10082613914741738,
+      "davies_bouldin": 2.4177437790893426,
+      "silhouette_sample_size": 4000
+    }
+  ],
+  "baseline_fatal_rate": 0.1171,
+  "version": "v2"
+}

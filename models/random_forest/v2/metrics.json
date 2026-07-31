@@ -1,5 +1,5 @@
 {
-  "trained_at_utc": "2026-07-31T06:57:58.618235+00:00",
+  "trained_at_utc": "2026-07-31T07:01:02.157228+00:00",
   "dataset_rows": 8067,
   "positive_rate": 0.11714391967274079,
   "features": [
@@ -70,5 +70,5 @@
       "NO SE CONOCE": 1439
     }
   },
-  "version": "v1"
+  "version": "v2"
 }

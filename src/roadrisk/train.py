@@ -2,7 +2,6 @@ import argparse
 import json
 from datetime import datetime, timezone
 
-import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.compose import ColumnTransformer
@@ -31,6 +30,7 @@ from .config import (
     PROCESSED_DIR,
     SUTRAN_CSV,
 )
+from . import registry
 from .data import (
     CATEGORICAL_FEATURES,
     FEATURE_COLUMNS,
@@ -116,7 +116,7 @@ def plot_feature_importance(best_pipeline: Pipeline, output_path) -> None:
     plt.close()
 
 
-def train(sutran_csv=SUTRAN_CSV) -> dict:
+def train(sutran_csv=SUTRAN_CSV, promote: bool = True) -> dict:
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     FIGURES_DIR.mkdir(parents=True, exist_ok=True)
@@ -202,8 +202,21 @@ def train(sutran_csv=SUTRAN_CSV) -> dict:
         "features": FEATURE_COLUMNS,
         "metrics": metrics,
     }
-    joblib.dump(artifact, MODEL_PATH)
-    METRICS_PATH.write_text(json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # Registro versionado: la version se guarda en models/random_forest/vN/
+    # y solo se promueve (punteros planos de produccion) si promote=True.
+    version = registry.register(
+        "random_forest",
+        artifact,
+        metrics,
+        algorithm=best["name"],
+        params=best["params"],
+        notes="Modelo supervisado de clasificacion binaria de riesgo fatal (RoadRisk Peru).",
+    )
+    metrics["version"] = version
+    if promote:
+        registry.set_production("random_forest", version)
+
     plot_confusion_matrix(y_test, predictions, FIGURES_DIR / "confusion_matrix.png")
     plot_feature_importance(estimator, FIGURES_DIR / "feature_importance.png")
     return metrics
@@ -212,8 +225,13 @@ def train(sutran_csv=SUTRAN_CSV) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sutran-csv", default=str(SUTRAN_CSV))
+    parser.add_argument(
+        "--no-promote",
+        action="store_true",
+        help="Registra la version como retador sin promoverla a produccion",
+    )
     args = parser.parse_args()
-    metrics = train(args.sutran_csv)
+    metrics = train(args.sutran_csv, promote=not args.no_promote)
     print(json.dumps(metrics, indent=2, ensure_ascii=False))
 
 

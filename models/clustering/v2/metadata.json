@@ -1,0 +1,13 @@
+{
+  "version": "v2",
+  "family": "clustering",
+  "algorithm": "kmeans",
+  "params": {
+    "n_clusters": 2,
+    "n_init": 10,
+    "random_state": 42
+  },
+  "trained_at_utc": "2026-07-31T07:01:07.496288+00:00",
+  "registered_at_utc": "2026-07-31T07:01:07.512329+00:00",
+  "notes": "Modelo no supervisado K-Means de descubrimiento de patrones de siniestros viales (RoadRisk Peru)."
+}

@@ -1,0 +1,22 @@
+{
+  "generated_at_utc": "2026-07-31T07:01:08.419543+00:00",
+  "primary_metric": "test_recall",
+  "secondary_metric": "test_roc_auc",
+  "decision": "KEPT_CHAMPION",
+  "champion": {
+    "version": "v1",
+    "test_recall": 0.7355769230769231,
+    "test_roc_auc": 0.6675022090226301
+  },
+  "challenger": {
+    "version": "v2",
+    "test_recall": 0.7355769230769231,
+    "test_roc_auc": 0.6675022090226301
+  },
+  "clustering": {
+    "version": "v2",
+    "k": 2,
+    "silhouette": 0.23300851440944423,
+    "davies_bouldin": 1.660333392819658
+  }
+}

@@ -1,5 +1,10 @@
 name: Automatic retraining
 
+# Pipeline de mantenimiento: se ejecuta diariamente (05:00 UTC) y de forma
+# manual desde GitHub Actions. Flujo: cargar datos -> limpiar -> entrenar
+# (supervisado como retador) -> comparar campeon vs retador -> registrar la
+# mejor version -> reentrenar clustering -> monitorear deriva -> publicar artefactos.
+
 on:
   workflow_dispatch:
   schedule:
@@ -15,8 +20,12 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Retrain model
-        run: python -m src.roadrisk.train
+      - name: Retrain + compare supervised model (champion vs challenger)
+        run: python -m src.roadrisk.retrain
+      - name: Retrain unsupervised model (K-Means)
+        run: python -m src.roadrisk.train_clustering
+      - name: Run monitoring drift check
+        run: python -m src.roadrisk.monitoring
       - name: Smoke test API
         run: pytest -q
       - name: Publish retrained model artifact
@@ -27,3 +36,5 @@ jobs:
             models/
             data/processed/
             reports/figures/
+            reports/monitoring/
+            reports/retraining/
