@@ -324,6 +324,8 @@ models/
 - `random_forest`: produccion **v3** (versiones: v1, v2, v3).
 - `clustering`: produccion **v3** (versiones: v1, v2, v3).
 
+Nota de coherencia: las versiones v3 en produccion provienen del build de despliegue en Render, que reentrena con promocion en cada deploy (ver seccion 9). La validacion local de reentrenamiento (seccion 11) demostro la regla campeon/retador conservando v1; ambos hechos son consistentes: el pipeline de mantenimiento solo promueve si el retador mejora, mientras el build de despliegue registra una version nueva en cada deploy.
+
 Los archivos planos `roadrisk_model.joblib` y `clustering_model.joblib` son punteros a la version en produccion, lo que preserva la compatibilidad con la app (no se elimino funcionalidad).
 
 Se eligio la estructura manual (sin MLflow) por: cero infraestructura adicional, compatibilidad total con Render free y despliegue por contenedor, y facilidad de explicacion y auditoria en el curso. El informe tecnico de la Unidad 1 ya exigia "versionar cambios con nombres claros"; ahora el sistema lo hace de forma automatica.
