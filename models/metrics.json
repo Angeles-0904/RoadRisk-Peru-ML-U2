@@ -1,0 +1,73 @@
+{
+  "trained_at_utc": "2026-05-29T13:09:29.519005+00:00",
+  "dataset_rows": 8067,
+  "positive_rate": 0.11714391967274079,
+  "features": [
+    "departamento",
+    "codigo_via",
+    "kilometro",
+    "modalidad",
+    "hora_siniestro",
+    "mes",
+    "dia_semana",
+    "es_noche"
+  ],
+  "target": "fatal = FALLECIDOS > 0",
+  "best_model": "random_forest",
+  "best_params": {
+    "model__max_depth": 8,
+    "model__min_samples_leaf": 8,
+    "model__n_estimators": 180
+  },
+  "leaderboard": [
+    {
+      "model": "logistic_regression",
+      "best_cv_roc_auc": 0.6617126979961364,
+      "best_params": {
+        "model__C": 0.3
+      }
+    },
+    {
+      "model": "random_forest",
+      "best_cv_roc_auc": 0.6779699935370638,
+      "best_params": {
+        "model__max_depth": 8,
+        "model__min_samples_leaf": 8,
+        "model__n_estimators": 180
+      }
+    }
+  ],
+  "decision_threshold": 0.42000000000000004,
+  "test_accuracy": 0.5098591549295775,
+  "test_precision": 0.15805785123966942,
+  "test_recall": 0.7355769230769231,
+  "test_f1": 0.2602040816326531,
+  "test_f2": 0.425,
+  "test_roc_auc": 0.6675022090226301,
+  "onsv_context": {
+    "siniestros_fatales_rows": 9106,
+    "personas_involucradas_rows": 25412,
+    "fallecidos_onsv": 10859,
+    "lesionados_onsv": 7837,
+    "departamentos_top": {
+      "LIMA": 1917,
+      "LA LIBERTAD": 850,
+      "CUSCO": 822,
+      "PUNO": 748,
+      "AREQUIPA": 698
+    },
+    "clases_top": {
+      "CHOQUE": 2875,
+      "DESPISTE": 2571,
+      "ATROPELLO": 1871,
+      "ATROPELLO FUGA": 885,
+      "VOLCADURA": 313
+    },
+    "personas_gravedad": {
+      "FALLECIDO": 10859,
+      "LESIONADO": 7830,
+      "ILESO": 5284,
+      "NO SE CONOCE": 1439
+    }
+  }
+}
