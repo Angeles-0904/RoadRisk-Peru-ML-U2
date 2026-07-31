@@ -1,76 +1,79 @@
-# Guion de exposicion - RoadRisk Peru (Unidad 2) · 12 minutos
+# Guion de exposicion - RoadRisk Peru (Unidad 2) · 12 minutos · Equipo de 4
 
-## Minuto 0-1: Problema y objetivo
+## Division de roles (segun la rubrica)
 
-> "Cada ano cientos de personas mueren en las carreteras del Peru. El problema no es solo el accidente, sino saber donde y cuando concentrar la prevencion. RoadRisk Peru responde dos preguntas: (1) dado un accidente que acaba de ocurrir, cual es la probabilidad de que haya fallecidos? y (2) existen patrones ocultos de accidentes que nos digan que tipo de siniestro es mas riesgoso? La segunda pregunta es la novedad de esta unidad: la resolvemos con aprendizaje NO supervisado dentro de una aplicacion desplegada en produccion con mantenimiento automatizado."
+| Persona | Rubrica que cubre | Pts | Minutos |
+|---|---|---|---|
+| Integrante 1 | Apertura (problema/objetivo) + Funcionamiento de la aplicacion EN INGLES | 3 | 0-1 y 5-7 |
+| Integrante 2 | Entrenamiento del modelo + Resultados | 3 | 3-5 y 9-11 |
+| Integrante 3 | Arquitectura del sistema + Despliegue | 2 | 1-3 |
+| Integrante 4 | Pipelines de mantenimiento e IC + Pruebas + Conclusiones | 4 | 7-9 y 11-12 |
 
-## Minuto 1-3: Arquitectura del sistema
+Enlaces para la exposicion:
 
-Mostrar el diagrama de arquitectura:
-
-- Cliente web (dos pestanas: Prediccion de riesgo y Analisis de patrones) -> FastAPI.
-- FastAPI expone 8 endpoints: 4 existentes (/, /predict, /predict-form, /health) y 4 nuevos (/api/v1/clusters, /api/v1/clusters/assign, /api/v1/models/registry, /api/v1/monitoring/report).
-- Capa de logica `src/roadrisk` con modulos separados: data, train, predict, clustering, train_clustering, registry, retrain, monitoring.
-- Capa de modelos: registro versionado `models/random_forest/vN/` y `models/clustering/vN/` + `registry.json`.
-- GitHub Actions: ci.yml (push/PR) y retrain.yml (diario).
-
-Frase clave:
-
-> "No creamos una aplicacion aparte: integramos el modulo no supervisado dentro del ciclo de vida del producto existente, manteniendo intacta la funcionalidad de la Unidad 1."
-
-## Minuto 3-5: Dataset y modelos
-
-- Dataset SUTRAN 2020-2021: 8,067 accidentes; 11.7% con fallecidos. ONSV 2021-2025 como contexto.
-- 8 variables: departamento, codigo_via, kilometro, modalidad, hora, mes, dia_semana, es_noche.
-- Modelo supervisado: Random Forest con GridSearchCV (n_estimators=180, max_depth=8, min_samples_leaf=8), umbral 0.42 optimizado por F2.
-- Modelo no supervisado: K-Means. Seleccion de k con tres criterios: metodo del codo, Silhouette y Davies-Bouldin -> k=2.
-- Preprocesamiento comun: imputacion, escalado y one-hot encoding.
-
-## Minuto 5-7: Funcionamiento de la aplicacion
-
-DEMO en vivo:
-
-1. Pestana "Prediccion de riesgo": ingresar un caso (LIMA, PE-1S, km 24, DESPISTE, 19h, mayo, lunes, nocturno) -> probabilidad fatal y clasificacion con umbral.
-2. Pestana "Analisis de patrones": se muestran los 2 clusters con tarjetas (tamano, tasa fatal, modalidad, departamento, hora).
-3. Asignar el mismo siniestro a un cluster: devuelve CL-01 o CL-02 con su perfil y distancia al centroide.
-4. Mostrar el monitor de deriva integrado (estado OK / alertas).
-
-Frase clave:
-
-> "El mismo formulario de la Unidad 1 sigue funcionando. La novedad es que ahora el siniestro tambien se clasifica dentro de un patron, y la app monitorea si los datos en produccion se estan desviando de los de entrenamiento."
-
-## Minuto 7-9: MLOps, CI/CD y mantenimiento
-
-- CI (`ci.yml`): en cada push -> instala dependencias, entrena supervisado, entrena clustering, verifica el registro, ejecuta 17 pruebas.
-- Mantenimiento (`retrain.yml`): diario 05:00 UTC y manual -> carga datos, entrena un RETADOR, lo compara contra el CAMPEON en produccion:
-  - Si el retador mejora recall -> se promueve.
-  - Si empeora -> se conserva el campeon y la version queda registrada.
-- Resultado real de la validacion: retador v2 con los mismos datos (recall 0.7356 = campeon v1) -> decision KEPT_CHAMPION, produccion se mantiene en v1.
-- Monitoreo: PSI para numericas + chi-cuadrado para categoricas, con alertas y estado (OK/REVISION/ACCION_REQUERIDA).
-- Versionamiento manual: cada version guarda modelo, metricas y metadatos (fecha, algoritmo, parametros). Estado: random_forest en v1, clustering en v2.
-
-Frase clave:
-
-> "El modelo no queda congelado: el pipeline lo reentrena, lo compara y lo versiona automaticamente cada dia. Solo se promueve una version si realmente mejora a la anterior."
-
-## Minuto 9-11: Resultados
-
-- Supervisado: ROC AUC 0.6675, recall 0.7356, precision 0.1581, F1 0.2602. (Se priorizo recall: es peor no alertar un caso fatal.)
-- No supervisado: k=2, silhouette 0.2330, Davies-Bouldin 1.6603.
-- Hallazgo principal (patron oculto): los siniestros se separan en diurnos (CL-01, 73%) y nocturnos (CL-02, 27%). El patron nocturno (choques, hora media 20h, 100% nocturno) tiene 9% mas riesgo relativo (1.09x vs 0.97x).
-- Monitoreo: estado OK, sin alertas (referencia = datos actuales; el sistema detectaria deriva con un CSV nuevo).
-- 17/17 pruebas en verde.
-
-## Minuto 11-12: Conclusiones
-
-1. RoadRisk Peru cumple la Unidad 2: aplicacion en produccion con elementos inteligentes de aprendizaje NO supervisado dentro del ciclo de vida del software.
-2. No se elimino funcionalidad: la prediccion de la Unidad 1 sigue operando; se anadio analisis de patrones, versionamiento, monitoreo y retraining.
-3. Decisiones de ingenieria justificadas: registro manual en vez de MLflow (cero infraestructura, compatible con Render free), K-Means con seleccion de k por 3 criterios, recall como metrica de negocio.
-4. El sistema es mantenible y auditable: versiones historicas, reportes de comparacion y de deriva en cada ciclo.
+- Aplicacion desplegada: `https://roadrisk-peru-ml-u2.onrender.com`
+- Repositorio: `https://github.com/Angeles-0904/RoadRisk-Peru-ML-U2`
+- Documentacion API: `https://roadrisk-peru-ml-u2.onrender.com/docs`
 
 ---
 
-# English version (Unidad 2 presentation - 12 minutes)
+## Minuto 0-1: Problema y objetivo (Integrante 1)
+
+> "Buenos dias. Somos el equipo de RoadRisk Peru. El problema: cada ano ocurren accidentes de transito en las carreteras de Peru, y algunos terminan con fallecidos. Nuestro objetivo es doble: primero, predecir el riesgo de que un accidente sea fatal con un modelo supervisado; segundo, descubrir patrones ocultos de accidentes con aprendizaje no supervisado. Todo en una aplicacion desplegada en produccion, con mantenimiento e integracion continua automaticos. Les presento la arquitectura."
+
+## Minuto 1-3: Arquitectura y despliegue (Integrante 3)
+
+> "Nuestra aplicacion usa FastAPI. Tiene dos partes: prediccion de riesgo y analisis de patrones. El codigo esta organizado en modulos: data para datos, train para entrenamiento, clustering para el modelo no supervisado, registry para versiones y monitoring para monitoreo. Los modelos se guardan versionados en models/. El despliegue es en Render: el Dockerfile instala las dependencias, entrena los dos modelos y levanta la app. El codigo esta en GitHub, en el repositorio RoadRisk-Peru-ML-U2, y los datos vienen de dos fuentes oficiales."
+
+*(transicion)* "Ahora, companera, cuentanos sobre los datos y el modelo."
+
+## Minuto 3-5: Dataset, modelo y entrenamiento (Integrante 2)
+
+> "Trabajamos con SUTRAN 2020-2021: mas de 8,000 accidentes en carreteras. La variable objetivo es fatal: 1 si hubo fallecidos, 0 si no. Usamos 8 caracteristicas: departamento, via, kilometro, modalidad, hora, mes, dia de semana y si es de noche. Para el modelo supervisado comparamos regresion logistica y Random Forest con GridSearchCV. El mejor fue Random Forest con 180 arboles, profundidad 8 y un umbral ajustado para priorizar el recall. El objetivo es no dejar de alertar un accidente fatal."
+
+*(transicion)* "Ahora les mostraremos como funciona la aplicacion."
+
+## Minuto 5-7: Funcionamiento de la aplicacion EN INGLES (Integrante 1)
+
+> "Good morning. Now I am going to show you how the application works."
+
+**Paso 1 - Prediction:**
+> "Here we have two tabs. The first one is 'Risk Prediction'. We enter the data of an accident: department Lima, road PE-1S, kilometer 24, type of accident 'despiste' (roll off the road), hour 7 pm, month May, day Monday, and night. We press 'Calculate'. The app gives us a 36% probability of fatalities. The result is 'Moderate Risk'. The model is a Random Forest, and the operating threshold is 0.42. Simple and fast."
+
+**Paso 2 - Patterns:**
+> "Now the second tab: 'Pattern Analysis'. This is the unsupervised learning part. The K-Means algorithm found two groups of accidents. CL-01 is the day pattern: more than 5,900 cases, mostly 'despiste', average hour 10 am. CL-02 is the night pattern: more than 2,100 cases, mostly 'choque' (crash), average hour 8 pm, 100% at night."
+
+**Paso 3 - Assign:**
+> "We send the same accident to this tab. The app assigns it to CL-02, the night pattern. Why is this important? Because CL-02 has a higher fatal rate: 12.8% versus 11.3%. The night pattern is 9% riskier."
+
+**Paso 4 - Monitoring:**
+> "And here we see the monitoring box: the system checks if the data changed. The status is OK, no alerts. Thank you. Now my teammate will explain the pipelines."
+
+## Minuto 7-9: Pipelines, mantenimiento y pruebas (Integrante 4)
+
+> "El mantenimiento esta automatizado con GitHub Actions. Tenemos dos flujos: ci.yml se ejecuta en cada push o pull request; instala dependencias, entrena los dos modelos, verifica el registro y ejecuta 17 pruebas automatizadas. retrain.yml se ejecuta todos los dias a las 5 de la manana; carga los datos, entrena un modelo nuevo llamado retador y lo compara con el que esta en produccion, el campeon. Regla: solo si el retador mejora el recall, se promueve. Si empeora, se conserva el campeon. Tambien reentrena el clustering y ejecuta el monitoreo de deriva con PSI. Cada ciclo genera reportes de comparacion y de monitoreo, y registra la version."
+
+*(transicion)* "Ahora, los resultados."
+
+## Minuto 9-11: Resultados (Integrante 2)
+
+> "Estos son los resultados del modelo supervisado: ROC AUC de 0.67, recall de 0.74, es decir, detectamos el 74% de los accidentes fatales. La precision es 0.16, porque la clase fatal es minoritaria: solo el 12% de los accidentes. Priorizamos el recall porque en seguridad vial es peor no alertar. El clustering encontro k=2 con un silhouette de 0.23. El patron nocturno CL-02 tiene mayor riesgo. El monitoreo reporta estado OK sin alertas. La validacion del reentrenamiento mantuvo la version v1 como campeon, porque el retador no la supero, cumpliendo la regla."
+
+## Minuto 11-12: Conclusiones (Integrante 4)
+
+> "En conclusion, RoadRisk Peru cumple el objetivo de la segunda unidad: es una aplicacion en produccion con aprendizaje no supervisado, con mantenimiento automatico e integracion continua. No eliminamos funcionalidad: la prediccion sigue funcionando y sumamos patrones, versionado, monitoreo y reentrenamiento. El sistema es mantenible: cualquier equipo TI puede reentrenar, comparar y versionar modelos con el informe tecnico. Gracias por su atencion. Preguntas?"
+
+---
+
+## Tips para la demo (Integrante 1)
+
+- Pronunciacion facil: "despiste" -> des-pis-te (roll off the road) · "choque" -> cho-ke (crash) · "fatal rate" -> fei-tal reit.
+- Usa la app en vivo mientras hablas: 1) llena el formulario, 2) muestra 36% / Moderate Risk, 3) cambia de pestana y senala CL-01/CL-02, 4) asigna y muestra CL-02, 5) senala "estado=OK".
+- Si te trabas: di "In simple words: at night, accidents are riskier".
+
+---
+
+# English version (full, for reference)
 
 ## Minutes 0-1: Problem and objective
 
@@ -86,7 +89,7 @@ Key phrase: "We did not create a separate application: we integrated the unsuper
 
 SUTRAN 2020-2021: 8,067 crashes, 11.7% fatal. ONSV 2021-2025 as context. Eight features: department, road code, kilometer, accident type, hour, month, weekday, night indicator. Supervised model: Random Forest with GridSearchCV (180 trees, depth 8, min_samples_leaf 8), 0.42 threshold optimized by F2. Unsupervised model: K-Means; k selected with three criteria (elbow, silhouette, Davies-Bouldin) -> k=2. Shared preprocessing: imputation, scaling, one-hot encoding.
 
-## Minutes 5-7: Application demo
+## Minutes 5-7: Application demo (in English)
 
 1. "Risk prediction" tab: enter a case (LIMA, PE-1S, km 24, DESPISTE, 7pm, May, Monday, night) -> fatal probability and classification.
 2. "Pattern analysis" tab: two cluster cards (size, fatal rate, dominant accident type, department, average hour).
@@ -97,7 +100,7 @@ Key phrase: "The Unit 1 form still works. The novelty: the crash is now also cla
 
 ## Minutes 7-9: MLOps, CI/CD and maintenance
 
-CI (`ci.yml`) on every push: install deps, train supervised, train clustering, verify registry, run 17 tests. Maintenance (`retrain.yml`) daily at 05:00 UTC and on demand: load data -> train a CHALLENGER -> compare against the production CHAMPION. If the challenger improves recall, promote it; otherwise keep the champion and only register the new version. Real validation result: challenger v2 with identical data (recall 0.7356 = champion v1) -> KEPT_CHAMPION, production stays at v1. Monitoring uses PSI for numeric features and chi-square for categorical ones, with alerts and status (OK / REVIEW / ACTION REQUIRED). Registry status: random_forest at v1, clustering at v2.
+CI (`ci.yml`) on every push: install deps, train supervised, train clustering, verify registry, run 17 tests. Maintenance (`retrain.yml`) daily at 05:00 UTC and on demand: load data -> train a CHALLENGER -> compare against the production CHAMPION. If the challenger improves recall, promote it; otherwise keep the champion and only register the new version. Monitoring uses PSI for numeric features and chi-square for categorical ones, with alerts and status (OK / REVIEW / ACTION REQUIRED).
 
 Key phrase: "The model is never frozen: the pipeline retrains, compares, and versions it automatically every day. A version is promoted only if it actually improves on the previous one."
 
