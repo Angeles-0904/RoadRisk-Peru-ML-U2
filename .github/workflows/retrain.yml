@@ -20,10 +20,10 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: pip install -r requirements.txt
-      - name: Retrain + compare supervised model (champion vs challenger)
+      # Nota: python -m src.roadrisk.retrain ya reentrena y promueve el modelo
+      # no supervisado (K-Means) internamente; no hace falta un paso aparte.
+      - name: Retrain + compare supervised model (champion vs challenger) and retrain K-Means
         run: python -m src.roadrisk.retrain
-      - name: Retrain unsupervised model (K-Means)
-        run: python -m src.roadrisk.train_clustering
       - name: Run monitoring drift check
         run: python -m src.roadrisk.monitoring
       - name: Smoke test API
